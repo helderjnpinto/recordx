@@ -167,10 +167,23 @@ def record_until_stopped(ffmpeg_cmd, max_minutes=None):
     print("    Press Ctrl+C to stop.\n")
     print("    FFmpeg command:")
     print("    " + " ".join(ffmpeg_cmd))
-
+    print("\n[=] Initializing audio sources...")
+    
     proc = subprocess.Popen(ffmpeg_cmd)
+    
+    # Wait a moment for FFmpeg to start
+    time.sleep(1)
+    
+    if proc.poll() is None:
+        print("[=] Recording started successfully!")
+        print("[=] Audio capture in progress...")
+        print("[=] Recording time: ", end="", flush=True)
+    else:
+        print("[!] ERROR: FFmpeg failed to start")
+        return
 
     stop_event = threading.Event()
+    start_time = time.time()
 
     def timeout_thread():
         if max_minutes is None:
@@ -186,7 +199,9 @@ def record_until_stopped(ffmpeg_cmd, max_minutes=None):
 
     try:
         while proc.poll() is None and not stop_event.is_set():
-            time.sleep(0.3)
+            elapsed = int(time.time() - start_time)
+            print(f"{elapsed:03d}s", end="\r", flush=True)
+            time.sleep(1)
     except KeyboardInterrupt:
         print("\n[+] Stopping recording...")
         if proc.poll() is None:
@@ -202,6 +217,10 @@ def record_until_stopped(ffmpeg_cmd, max_minutes=None):
                 proc.kill()
 
     proc.wait()
+    
+    # Calculate and display recording duration
+    total_duration = int(time.time() - start_time)
+    print(f"\n[=] Recording completed! Duration: {total_duration:03d}s")
 
     if proc.returncode not in (0, 255):
         print(f"WARNING: ffmpeg exited with code {proc.returncode}")
