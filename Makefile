@@ -1,4 +1,4 @@
-.PHONY: help install setup run run-fallback-bt run-fallback-cam transcribe clean clean-recordings check-deps list-devices
+.PHONY: help install setup run run-fallback-bt run-fallback-cam run-gpu transcribe transcribe-gpu setup-cuda clean clean-recordings check-deps list-devices
 
 # Default target
 help:
@@ -8,7 +8,10 @@ help:
 	@echo "  make run        - Run with primary devices (HD Pro Webcam + Bluetooth)"
 	@echo "  make run-fallback-bt - Run with laptop speakers (fallback for Bluetooth)"
 	@echo "  make run-fallback-cam - Run with laptop mic (fallback for HD Pro Webcam)"
+	@echo "  make run-gpu     - Run with GPU for faster transcription"
 	@echo "  make transcribe  - Transcribe most recent recording only"
+	@echo "  make transcribe-gpu - Transcribe with GPU (much faster)"
+	@echo "  make setup-cuda  - Install CUDA dependencies for GPU support"
 	@echo "  make clean-recordings - Delete all recordings and transcripts"
 	@echo "  make list-devices - List available audio devices"
 	@echo "  make check-deps - Check if dependencies are installed"
@@ -69,6 +72,18 @@ run-fallback-cam:
 	  --device cpu \
 	  --compute-type int8
 
+# Run with GPU for faster transcription
+run-gpu:
+	@echo "Running with primary devices: HD Pro Webcam + Bluetooth (GPU transcription)"
+	. .venv/bin/activate && \
+	python standup_recorder.py \
+	  --monitor-source bluez_output.44_E1_61_91_CC_47.1.monitor \
+	  --mic-source alsa_input.usb-046d_HD_Pro_Webcam_C920_7ACBEC1F-02.3.analog-stereo \
+	  --model large-v3 \
+	  --language pt \
+	  --device cuda \
+	  --compute-type float16
+
 # Transcribe most recent recording only
 transcribe:
 	@echo "Transcribing most recent recording..."
@@ -83,6 +98,29 @@ transcribe:
 	  --language pt \
 	  --device cpu \
 	  --compute-type int8
+
+# Transcribe most recent recording with GPU (much faster)
+transcribe-gpu:
+	@echo "Transcribing most recent recording with GPU..."
+	@if [ ! -d "recordings" ]; then echo "No recordings directory found!"; exit 1; fi
+	@latest_dir=$$(ls -t recordings/ | head -1); \
+	if [ -z "$$latest_dir" ]; then echo "No recordings found!"; exit 1; fi; \
+	echo "Processing: recordings/$$latest_dir/mixed.wav"; \
+	. .venv/bin/activate && \
+	python standup_recorder.py \
+	  --transcribe-only recordings/$$latest_dir/mixed.wav \
+	  --model large-v3 \
+	  --language pt \
+	  --device cuda \
+	  --compute-type float16
+
+# Install CUDA dependencies for GPU support
+setup-cuda:
+	@echo "Installing PyTorch with CUDA support..."
+	. .venv/bin/activate && \
+	pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 && \
+	pip install --upgrade faster-whisper
+	@echo "CUDA dependencies installed! Try: make transcribe-gpu"
 
 # List available audio devices
 list-devices:
