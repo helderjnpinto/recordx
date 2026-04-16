@@ -1,4 +1,4 @@
-.PHONY: help install setup run run-fallback-bt run-fallback-cam transcribe clean check-deps list-devices
+.PHONY: help install setup run run-fallback-bt run-fallback-cam transcribe clean clean-recordings check-deps list-devices
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  make run-fallback-bt - Run with laptop speakers (fallback for Bluetooth)"
 	@echo "  make run-fallback-cam - Run with laptop mic (fallback for HD Pro Webcam)"
 	@echo "  make transcribe  - Transcribe most recent recording only"
+	@echo "  make clean-recordings - Delete all recordings and transcripts"
 	@echo "  make list-devices - List available audio devices"
 	@echo "  make check-deps - Check if dependencies are installed"
 	@echo "  make clean      - Clean virtual environment"
@@ -99,3 +100,9 @@ clean:
 	@echo "Removing virtual environment..."
 	rm -rf .venv
 	@echo "Virtual environment removed!"
+
+# Clean all recordings and transcripts
+clean-recordings:
+	@echo "Removing all recordings and transcripts..."
+	rm -rf recordings/
+	@echo "All recordings deleted!"
