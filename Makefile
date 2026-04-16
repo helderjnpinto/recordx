@@ -41,8 +41,8 @@ run:
 	  --mic-source alsa_input.usb-046d_HD_Pro_Webcam_C920_7ACBEC1F-02.3.analog-stereo \
 	  --model large-v3 \
 	  --language pt \
-	  --device cuda \
-	  --compute-type float16
+	  --device cpu \
+	  --compute-type int8
 
 # Run with fallback for Bluetooth (use laptop speakers)
 run-fallback-bt:
@@ -53,8 +53,8 @@ run-fallback-bt:
 	  --mic-source alsa_input.usb-046d_HD_Pro_Webcam_C920_7ACBEC1F-02.3.analog-stereo \
 	  --model large-v3 \
 	  --language pt \
-	  --device cuda \
-	  --compute-type float16
+	  --device cpu \
+	  --compute-type int8
 
 # Run with fallback for HD Pro Webcam (use laptop mic)
 run-fallback-cam:
@@ -65,8 +65,8 @@ run-fallback-cam:
 	  --mic-source alsa_input.pci-0000_05_00.6.3.analog-stereo \
 	  --model large-v3 \
 	  --language pt \
-	  --device cuda \
-	  --compute-type float16
+	  --device cpu \
+	  --compute-type int8
 
 # Transcribe most recent recording only
 transcribe:
@@ -80,8 +80,8 @@ transcribe:
 	  --transcribe-only recordings/$$latest_dir/mixed.wav \
 	  --model large-v3 \
 	  --language pt \
-	  --device cuda \
-	  --compute-type float16
+	  --device cpu \
+	  --compute-type int8
 
 # List available audio devices
 list-devices:

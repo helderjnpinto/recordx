@@ -191,9 +191,15 @@ def record_until_stopped(ffmpeg_cmd, max_minutes=None):
         print("\n[+] Stopping recording...")
         if proc.poll() is None:
             print("    Waiting for FFmpeg to finalize...")
-            # Give FFmpeg a moment to finish writing
-            time.sleep(1)
+            # Give FFmpeg more time to finish writing
+            time.sleep(2)
             proc.terminate()  # More graceful than SIGINT
+            # Wait a bit more for termination
+            time.sleep(1)
+            # If still running, force kill
+            if proc.poll() is None:
+                print("    Force stopping FFmpeg...")
+                proc.kill()
 
     proc.wait()
 
