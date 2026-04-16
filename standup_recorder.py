@@ -98,7 +98,14 @@ def transcribe_audio(
     beam_size=5,
 ):
     print(f"[+] Loading model: {model_name} ({device}, {compute_type})")
-    model = WhisperModel(model_name, device=device, compute_type=compute_type)
+    print("    (First time may download model - this can take a while)")
+    
+    try:
+        model = WhisperModel(model_name, device=device, compute_type=compute_type)
+    except KeyboardInterrupt:
+        print("\n[!] Model download interrupted. The audio file is saved.")
+        print("    Run again to resume - the model will continue downloading.")
+        raise
 
     print("[+] Transcribing...")
     segments_iter, info = model.transcribe(
@@ -183,7 +190,10 @@ def record_until_stopped(ffmpeg_cmd, max_minutes=None):
     except KeyboardInterrupt:
         print("\n[+] Stopping recording...")
         if proc.poll() is None:
-            proc.send_signal(signal.SIGINT)
+            print("    Waiting for FFmpeg to finalize...")
+            # Give FFmpeg a moment to finish writing
+            time.sleep(1)
+            proc.terminate()  # More graceful than SIGINT
 
     proc.wait()
 
@@ -195,8 +205,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Record Discord/system audio + mic on Linux and transcribe locally with faster-whisper."
     )
-    parser.add_argument("--monitor-source", required=True, help="Pulse/PipeWire monitor source for Discord/system audio")
-    parser.add_argument("--mic-source", required=True, help="Pulse/PipeWire microphone source")
+    parser.add_argument("--monitor-source", help="Pulse/PipeWire monitor source for Discord/system audio")
+    parser.add_argument("--mic-source", help="Pulse/PipeWire microphone source")
     parser.add_argument("--outdir", default="recordings", help="Output directory")
     parser.add_argument("--model", default="large-v3", help="Whisper model name, e.g. large-v3")
     parser.add_argument("--language", default="pt", help="Language code, e.g. pt or en")
@@ -204,7 +214,42 @@ def main():
     parser.add_argument("--compute-type", default="float16", help="float16/int8/auto")
     parser.add_argument("--max-minutes", type=int, default=None, help="Optional hard stop for recording")
     parser.add_argument("--skip-transcription", action="store_true", help="Only record audio, do not transcribe")
+    parser.add_argument("--transcribe-only", help="Only transcribe existing audio file (path to wav file)")
     args = parser.parse_args()
+
+    # Validate arguments
+    if not args.transcribe_only:
+        if not args.monitor_source or not args.mic_source:
+            print("ERROR: --monitor-source and --mic-source are required for recording")
+            sys.exit(1)
+
+    # Handle transcribe-only mode
+    if args.transcribe_only:
+        audio_path = Path(args.transcribe_only)
+        if not audio_path.exists():
+            print(f"ERROR: Audio file not found: {audio_path}")
+            sys.exit(1)
+        
+        print(f"[+] Transcribing existing file: {audio_path}")
+        transcript, segments, meta = transcribe_audio(
+            audio_path,
+            model_name=args.model,
+            device=args.device,
+            compute_type=args.compute_type,
+            language=args.language,
+        )
+        
+        # Save transcription
+        output_dir = audio_path.parent
+        with open(output_dir / "transcript.txt", "w", encoding="utf-8") as f:
+            f.write(transcript)
+        with open(output_dir / "segments.json", "w", encoding="utf-8") as f:
+            json.dump(segments, f, indent=2, ensure_ascii=False)
+        with open(output_dir / "meta.json", "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2)
+        
+        print(f"[+] Transcription saved to: {output_dir}")
+        return
 
     ensure_ffmpeg()
 

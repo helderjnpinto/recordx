@@ -1,4 +1,4 @@
-.PHONY: help install setup run run-fallback-bt run-fallback-cam clean check-deps list-devices
+.PHONY: help install setup run run-fallback-bt run-fallback-cam transcribe clean check-deps list-devices
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "  make run        - Run with primary devices (HD Pro Webcam + Bluetooth)"
 	@echo "  make run-fallback-bt - Run with laptop speakers (fallback for Bluetooth)"
 	@echo "  make run-fallback-cam - Run with laptop mic (fallback for HD Pro Webcam)"
+	@echo "  make transcribe  - Transcribe most recent recording only"
 	@echo "  make list-devices - List available audio devices"
 	@echo "  make check-deps - Check if dependencies are installed"
 	@echo "  make clean      - Clean virtual environment"
@@ -62,6 +63,21 @@ run-fallback-cam:
 	python standup_recorder.py \
 	  --monitor-source bluez_output.44_E1_61_91_CC_47.1.monitor \
 	  --mic-source alsa_input.pci-0000_05_00.6.3.analog-stereo \
+	  --model large-v3 \
+	  --language pt \
+	  --device cuda \
+	  --compute-type float16
+
+# Transcribe most recent recording only
+transcribe:
+	@echo "Transcribing most recent recording..."
+	@if [ ! -d "recordings" ]; then echo "No recordings directory found!"; exit 1; fi
+	@latest_dir=$$(ls -t recordings/ | head -1); \
+	if [ -z "$$latest_dir" ]; then echo "No recordings found!"; exit 1; fi; \
+	echo "Processing: recordings/$$latest_dir/mixed.wav"; \
+	. .venv/bin/activate && \
+	python standup_recorder.py \
+	  --transcribe-only recordings/$$latest_dir/mixed.wav \
 	  --model large-v3 \
 	  --language pt \
 	  --device cuda \
