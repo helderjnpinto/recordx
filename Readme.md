@@ -1,3 +1,31 @@
+# Setup and Installation
+
+## Quick Start with Makefile
+
+```bash
+# Setup environment and install dependencies
+make setup
+
+# Run with primary devices (HD Pro Webcam + Bluetooth headphones)
+make run
+
+# Run with fallback devices
+make run-fallback-bt    # Use laptop speakers instead of Bluetooth
+make run-fallback-cam   # Use laptop mic instead of HD Pro Webcam
+
+# List available audio devices
+make list-devices
+
+# Check dependencies
+make check-deps
+
+# Clean environment
+make clean
+```
+
+## Manual Setup
+
+```bash
 source .venv/bin/activate
 
 python standup_recorder.py \
