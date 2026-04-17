@@ -350,7 +350,7 @@ If you're new to the project, start by:
 - Reading through the existing codebase
 - Running the application locally
 - Checking existing issues for good first contributions
-- Joining discussions in the project's communication channels
+- Joining discussions by creating a issue!
 
 **All contributions are welcome!** Whether it's a small bug fix, documentation improvement, or a major feature enhancement, we appreciate your effort to make RecordX better for everyone.
 
