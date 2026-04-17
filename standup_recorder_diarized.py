@@ -12,6 +12,10 @@ from datetime import datetime
 from pathlib import Path
 import warnings
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -42,6 +46,48 @@ try:
 except ImportError as e:
     print(f"[!] Warning: faster-whisper not available ({e})")
     FASTER_WHISPER_AVAILABLE = False
+
+
+def is_valid_segment(text, duration):
+    """
+    Filter out garbage transcriptions that appear after speech ends.
+    Returns False for:
+    - Segments containing only numbers (like "1435", "1436")
+    - Very short segments with just numbers or single words
+    - Segments that appear to be timer/counter outputs
+    """
+    import re
+    
+    # Strip text
+    text = text.strip()
+    if not text:
+        return False
+    
+    # If text is only numbers (with or without spaces), reject it
+    # This catches "1435", "1436", "1 2 3 4 5" etc.
+    if re.match(r'^[\d\s]+$', text):
+        return False
+    
+    # If text is very short (1-2 chars) and doesn't look like a real word, reject
+    if len(text) <= 2 and not re.search(r'[aeiouáàâãéèêíóôõúü]', text, re.IGNORECASE):
+        return False
+    
+    # Reject segments that look like timestamps or counters
+    # e.g., "1435", "1411", "10:30", "10 30"
+    if re.match(r'^[\d:.]+\s*[\d:.]*$', text):
+        return False
+    
+    # Reject segments that are just punctuation
+    if re.match(r'^[,.\-_:;]+$', text):
+        return False
+    
+    # Reject very short segments that are likely VAD artifacts
+    if duration < 0.5 and len(text.split()) <= 2:
+        # But keep if it contains vowels (real words)
+        if not re.search(r'[aeiouáàâãéèêíóôõúü]', text, re.IGNORECASE):
+            return False
+    
+    return True
 
 
 def run_cmd(cmd, check=True, capture_output=False, text=True):
@@ -141,6 +187,7 @@ def transcribe_with_diarization(
     min_speakers=None,
     max_speakers=None,
     diarization_model="pyannote/speaker-diarization-community-1.0",
+    hf_token=None,
 ):
     """
     Transcribe audio with WhisperX and perform speaker diarization with pyannote.
@@ -173,9 +220,11 @@ def transcribe_with_diarization(
             
             # Load diarization pipeline
             try:
+                # Check for token in args first, then environment
+                token = hf_token or os.environ.get("HF_TOKEN")
                 diarization_pipeline = Pipeline.from_pretrained(
                     diarization_model,
-                    use_pytorch2_16=True if device == "cuda" else False
+                    token=token
                 )
                 if device == "cuda":
                     diarization_pipeline = diarization_pipeline.to(torch.device("cuda"))
@@ -341,14 +390,17 @@ def transcribe_with_faster_whisper(
     full_text_parts = []
 
     for seg in segments_iter:
-        item = {
-            "speaker": "SPEAKER_00",
-            "start": float(seg.start),
-            "end": float(seg.end),
-            "text": seg.text.strip(),
-        }
-        segments.append(item)
-        full_text_parts.append(item["text"])
+        # Filter out garbage: very short segments or just numbers
+        text = seg.text.strip()
+        if is_valid_segment(text, seg.end - seg.start):
+            item = {
+                "speaker": "SPEAKER_00",
+                "start": float(seg.start),
+                "end": float(seg.end),
+                "text": text,
+            }
+            segments.append(item)
+            full_text_parts.append(text)
 
     meta = {
         "whisper_model": model_name,
@@ -639,6 +691,8 @@ def main():
     parser.add_argument("--max-speakers", type=int, default=None, help="Maximum number of speakers")
     parser.add_argument("--diarization-model", default="pyannote/speaker-diarization-community-1.0", 
                        help="Diarization model")
+    parser.add_argument("--hf-token", default=None, 
+                       help="HuggingFace token for gated diarization model")
     
     args = parser.parse_args()
 
@@ -671,6 +725,7 @@ def main():
             min_speakers=args.min_speakers,
             max_speakers=args.max_speakers,
             diarization_model=args.diarization_model,
+            hf_token=args.hf_token,
         )
         
         # Create outputs
@@ -745,6 +800,7 @@ def main():
         min_speakers=args.min_speakers,
         max_speakers=args.max_speakers,
         diarization_model=args.diarization_model,
+        hf_token=args.hf_token,
     )
 
     # Create outputs
