@@ -325,11 +325,34 @@ make run-fallback-cam
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly with `make test-diarization`
-5. Submit a pull request
+We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or suggesting enhancements, your input is valuable.
+
+### How to Contribute
+
+1. **Fork the repository** and create your feature branch
+2. **Make your changes** following the existing code style and patterns
+3. **Test thoroughly** using `make test-diarization` and ensure all tests pass
+4. **Document your changes** in the appropriate sections
+5. **Submit a pull request** with a clear description of your changes
+
+### Areas for Contribution
+
+- **Audio Processing**: Improve recording quality, add device compatibility
+- **AI Models**: Enhance transcription accuracy, add language support
+- **User Experience**: Better error handling, UI improvements
+- **Documentation**:完善文档, add examples, translate to other languages
+- **Integration**: Expand n8n workflows, add new automation options
+- **Performance**: Optimize GPU usage, reduce memory footprint
+
+### Getting Started
+
+If you're new to the project, start by:
+- Reading through the existing codebase
+- Running the application locally
+- Checking existing issues for good first contributions
+- Joining discussions in the project's communication channels
+
+**All contributions are welcome!** Whether it's a small bug fix, documentation improvement, or a major feature enhancement, we appreciate your effort to make RecordX better for everyone.
 
 ## 📄 License
 
