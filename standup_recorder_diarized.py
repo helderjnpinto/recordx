@@ -817,7 +817,7 @@ def main():
         encoding="utf-8",
     )
     standup_summary_json.write_text(
-        json.dump(standup_summary, ensure_ascii=False, indent=2),
+        json.dumps(standup_summary, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     transcript_txt.write_text(n8n_output["transcript"], encoding="utf-8")

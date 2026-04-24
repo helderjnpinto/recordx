@@ -81,6 +81,7 @@ run-fallback-cam:
 run-gpu:
 	@echo "Running with primary devices: HD Pro Webcam + Bluetooth (GPU transcription)"
 	. .venv/bin/activate && \
+	export LD_LIBRARY_PATH="/usr/local/lib/ollama/cuda_v12:$$LD_LIBRARY_PATH" && \
 	python standup_recorder.py \
 	  --monitor-source bluez_output.44_E1_61_91_CC_47.1.monitor \
 	  --mic-source alsa_input.usb-046d_HD_Pro_Webcam_C920_7ACBEC1F-02.3.analog-stereo \
@@ -162,6 +163,7 @@ run-diarized:
 run-diarized-gpu:
 	@echo "Running with speaker diarization: HD Pro Webcam + Bluetooth (GPU)"
 	. .venv/bin/activate && \
+	export LD_LIBRARY_PATH="/usr/local/lib/ollama/cuda_v12:$$LD_LIBRARY_PATH" && \
 	python standup_recorder_diarized.py \
 	  --monitor-source bluez_output.44_E1_61_91_CC_47.1.monitor \
 	  --mic-source alsa_input.usb-046d_HD_Pro_Webcam_C920_7ACBEC1F-02.3.analog-stereo \
