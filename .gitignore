@@ -147,3 +147,4 @@ transcripts/
 recordings/
 logs/
 .env
+config.json
